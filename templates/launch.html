@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rubiqs | AI-Powered Mastery</title>
+  <script src="https://cdn.tiny.cloud/1/{{ tinymce_api_key }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+  <script>
+    tinymce.init({
+      selector: '#inline-textarea',
+      menubar: false,
+      plugins: 'lists table link image',
+      toolbar: 'undo redo | bold italic underline | alignleft aligncenter alignright | bullist numlist | table link image',
+      height: 300
+    });
+  </script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: linear-gradient(to right, #f1e2c4, #5ca198, #1f3a54);
+      color: #333;
+      padding: 2rem;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .card {
+      background: white;
+      padding: 2rem;
+      max-width: 720px;
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      max-height: 80px;
+      width: auto;
+      margin-right: 1.5rem;
+    }
+
+    .brand-text h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      color: #2c3e50;
+    }
+
+    .brand-text .tagline {
+      font-size: 1rem;
+      color: #7f8c8d;
+    }
+
+    .brand-text .byline {
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+
+    .welcome {
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    form label.file-label {
+      font-weight: bold;
+      display: block;
+      margin-top: 1rem;
+      text-align: left;
+      font-size: 1.05rem;
+      color: #1f3a54;
+    }
+
+    .file-button {
+      display: inline-block;
+      background-color: #1f3a54;
+      color: white;
+      font-weight: bold;
+      padding: 0.65rem 1.2rem;
+      border-radius: 6px;
+      text-align: center;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: background-color 0.3s ease;
+    }
+
+    .file-button:hover {
+      background-color: #1f2a36;
+    }
+
+    .file-button input[type="file"] {
+      display: none;
+    }
+
+    form input[type="submit"] {
+      margin-top: 1.5rem;
+      width: 100%;
+      background: #1f3a54;
+      color: white;
+      padding: 0.85rem 1rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      position: relative;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    form input[type="submit"]:hover {
+      background: #1f2a36;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    form input[type="submit"]:active {
+      transform: scale(0.98);
+    }
+
+    form input[type="submit"]::after {
+      content: "➔";
+      position: absolute;
+      right: 20px;
+      font-size: 1.2rem;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 2rem;
+    }
+
+    .spinner {
+      margin: 0 auto;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #ccc;
+      border-top: 4px solid #2c3e50;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="brand-header">
+      <img src="/static/rubiqs-suite-logo.png" alt="Rubiqs Logo" class="logo">
+      <div class="brand-text">
+        <h1>Rubiqs</h1>
+        <div class="tagline">AI-Powered Mastery</div>
+        <div class="byline">by J. Baker Design</div>
+      </div>
+    </div>
+
+    
+
+
+    <div class="welcome">
+      {% if assignment_config %}
+      Submit your work and let <strong>Rubiqs</strong> handle the rest.
+      {% endif %}
+    </div>
+
+    
+    <form id="grade-form"
+      action="{% if assignment_config.form_type in ['n400', 'i765', 'i130a'] %}/grade-uscis-form{% else %}/grade-docx{% endif %}"
+      method="POST"
+      enctype="multipart/form-data"
+      onsubmit="showLoading()">
+
+  {% if assignment_config.allow_inline_submission %}
+    <label for="inline-textarea" class="file-label">✍️ Type your response below:</label>
+    <textarea id="inline-textarea" name="inline_text"></textarea>
+  {% else %}
+    <label for="file-upload" class="file-label">📄 Assignment file (.docx or .pdf):</label>
+    <div style="display: flex; align-items: center; gap: 1rem; justify-content: flex-start;">
+      <label class="file-button" style="margin: 0;">
+        <input type="file" id="file-upload" name="file" accept=".docx,.pdf" required onchange="showFileName('file-upload', 'file-label-display-1')">
+        Choose File
+      </label>
+      <div id="file-label-display-1" style="font-size: 0.9rem; color: #555;"></div>
+    </div>
+  {% endif %}
+
+  <!-- 🔒 Hidden fields so the grade route can resolve config even if the session is empty -->
+  <input type="hidden" name="assignment_id" value="{{ assignment_config.assignment_id }}">
+  <input type="hidden" name="assignment_title" value="{{ assignment_config.assignment_title or activity_name }}">
+  <input type="hidden" name="form_type" value="{{ assignment_config.form_type }}">
+  <input type="hidden" name="gpt_model" value="{{ assignment_config.gpt_model or 'json' }}">
+
+  <input id="submit-btn" type="submit" value="Submit for Grading">
+</form>
+
+
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p style="margin-top: 1rem;">Grading in progress… Please wait ⏳</p>
+    </div>
+
+    <div class="text-center text-sm text-gray-500 mt-8 mb-4">
+      &copy; 2025 J. Baker Design
+    </div>
+
+    <script>
+      function showLoading() {
+        document.getElementById('submit-btn').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
+      }
+
+      function showFileName(inputId, labelId) {
+        const input = document.getElementById(inputId);
+        const label = document.getElementById(labelId);
+        if (input && input.files.length > 0) {
+          label.innerText = input.files[0].name;
+        } else {
+          label.innerText = '';
+        }
+      }
+    </script>
+  </div>
+
+</body>
+</html>

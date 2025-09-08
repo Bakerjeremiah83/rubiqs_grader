@@ -1,0 +1,70 @@
+{% extends "grader_base.html" %}
+
+{% block content %}
+<h2 class="title">Assignment Setup</h2>
+<p>Use this panel to configure Rubiqs Grader assignments for student submission and AI feedback.</p>
+
+<!-- TODO: Paste or build out your form fields here -->
+<div class="tab-panel active" id="setup">
+  <form method="POST" action="/save-assignment" enctype="multipart/form-data">
+    <div class="row">
+      <div class="form-group" style="flex: 1 1 48%;">
+        <label>Assignment Title</label>
+        <input type="text" name="assignment_title" required />
+      </div>
+      <div class="form-group" style="flex: 1 1 48%;">
+        <label>Total Points</label>
+        <input type="number" name="total_points" placeholder="e.g. 100" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="form-group wide">
+        <label>Assignment Description</label>
+        <textarea rows="4" name="description"></textarea>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="form-group" style="flex: 1;">
+        <label>Rubric File</label>
+        <input type="file" name="rubric_upload" accept=".json,.docx,.pdf" />
+      </div>
+      <div class="form-group" style="flex: 1;">
+        <label>Additional File</label>
+        <input type="file" name="additional_files" accept=".pdf,.docx" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="form-group wide">
+        <label>Custom AI Grading Instructions</label>
+        <textarea rows="4" name="custom_ai"></textarea>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="form-group">
+        <label for="faith_integration">Enable Gospel-Centered Feedback?</label>
+        <select name="faith_integration" id="faith_integration">
+          <option value="false">No</option>
+          <option value="true">Yes</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="delay_posting">Delay Feedback Posting</label>
+        <select name="delay_posting" id="delay_posting">
+          <option value="immediate">Immediately</option>
+          <option value="12h">12 hours</option>
+          <option value="24h">24 hours</option>
+          <option value="48h">48 hours</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top: 1.5rem;">
+      <button type="submit" class="tab-button active">Save Assignment</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

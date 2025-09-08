@@ -1,0 +1,573 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Assignment | Rubiqs</title>
+  <style>
+  .hidden {
+    display: none;
+  }
+    .form-group.third {
+      flex: 1 1 32%;
+    }
+  
+    .form-control {
+      width: 100%;
+      height: 42px;
+      padding: 0.6rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+  
+    
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f4f6f8;
+      color: #1f3a54;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+  
+    .card {
+      background: white;
+      padding: 2rem;
+      width: 100%;
+      max-width: 1000px;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    }
+  
+    h2.title {
+      text-align: center;
+      font-size: 1.75rem;
+      font-weight: bold;
+      margin-bottom: 1.5rem;
+    }
+  
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 1.5rem;
+    }
+  
+    .tab-button {
+      padding: 0.6rem 1.2rem;
+      background: #eee;
+      border: none;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #1f3a54;
+      font-size: 0.95rem;
+    }
+  
+    .tab-button.active {
+      background: white;
+      border: 1px solid #ccc;
+      border-bottom: none;
+    }
+  
+    .tab-panel {
+      display: none;
+    }
+  
+    .tab-panel.active {
+      display: block;
+    }
+  
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+  
+    .form-group {
+      flex: 1 1 48%;
+    }
+
+    .form-group.wide textarea {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+    .form-group.third {
+      flex: 1 1 30%;
+      min-width: 0;
+    }
+
+    .wide {
+      flex: 1 1 100%;
+    }
+
+    .form-group.quarter {
+      flex: 1 1 23%;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 0.3rem;
+      display: block;
+    }
+  
+    input[type="text"],
+    input[type="file"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.6rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+  
+    textarea {
+      resize: vertical;
+    }
+  
+    .require-toggle {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-direction: column;
+    }
+  
+    .toggle-option {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+  
+    .toggle-option.active {
+      background-color: #1f3a54;
+      color: white;
+      border-color: #1f3a54;
+    }
+  
+    .instruction-note {
+      font-size: 0.85rem;
+      color: #555;
+      margin-top: 0.3rem;
+    }
+  
+    button.submit {
+      display: block;
+      margin: 2rem auto 0 auto;
+      background: #1f3a54;
+      color: white;
+      padding: 0.85rem 2rem;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+  
+    button.submit:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  
+    button.submit:hover:not(:disabled) {
+      background: #142835;
+    }
+  
+    .logo {
+      max-height: 80px;
+      width: auto;
+      margin-right: 1.5rem;
+    }
+
+    .tox.tox-tinymce {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  </style>
+</head>
+<body>
+  
+  <div class="card">
+    <h2 class="title">Edit Rubiqs Grader Assignments</h2>
+    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-bottom: 1.5rem;">
+      <a href="/grader-base?tab=instructor" class="submit-button" style="background-color: #1f3a54; color: white; padding: 0.6rem 1.25rem; font-size: 0.9rem; border-radius: 8px; text-decoration: none;">
+        ← Return to Submissions
+      </a>
+      <a href="/grader-base" class="submit-button" style="background-color: #1f3a54; color: white; padding: 0.6rem 1.25rem; font-size: 0.9rem; border-radius: 8px; text-decoration: none;">
+        🏠 Rubiqs Grader Dashboard
+      </a>
+    </div>
+    
+    
+    <form method="post" enctype="multipart/form-data">
+    
+      <div class="row">
+        <div class="form-group third">
+          <label for="rubric_file">Rubric File</label>
+          <input type="file" name="rubric_file" id="rubric_file" accept=".json,.pdf,.docx" />
+          {% if assignment.rubric_file %}
+            <small class="instruction-note">
+              Uploaded: <a href="{{ assignment.rubric_file }}" target="_blank">{{ assignment.rubric_file.split('/')[-1] }}</a>
+            </small>
+          {% endif %}
+        </div>
+        <div class="form-group third">
+          <label for="additional_file">Additional File</label>
+          <input type="file" name="additional_file" id="additional_file" accept=".json,.pdf,.docx" />
+          {% if assignment.additional_file %}
+            <small class="instruction-note">
+              Uploaded: <a href="{{ assignment.additional_file }}" target="_blank">{{ assignment.additional_file.split('/')[-1] }}</a>
+            </small>
+          {% endif %}
+        </div>
+        <div class="form-group third">
+          <label for="answer_key_file">Answer Key (JSON)</label>
+          <input type="file" name="answer_key_file" id="answer_key_file" accept=".json" />
+          {% if assignment.answer_key_file %}
+            <small class="instruction-note">
+              Uploaded: <a href="{{ assignment.answer_key_file }}" target="_blank">{{ assignment.answer_key_file.split('/')[-1] }}</a>
+            </small>
+          {% endif %}
+        </div>
+      </div>
+      
+      
+      
+  
+      <div class="row">
+        <div class="form-group third">
+          <label for="assignment_title">Assignment Title</label>
+          <input type="text" name="assignment_title" id="assignment_title" value="{{ assignment.assignment_title }}" class="form-control" />
+        </div>
+      
+        <div class="form-group third">
+          <label for="assignment_type">Assignment Type</label>
+          <select name="assignment_type" id="assignment_type" class="form-control">
+            <option value="essay" {% if assignment.assignment_type == 'essay' %}selected{% endif %}>Essay (Traditional Rubric)</option>
+            <option value="notes" {% if assignment.assignment_type == 'notes' %}selected{% endif %}>Rubiqs Notes</option>
+            <option value="interactive_chat" {% if assignment.assignment_type == 'interactive_chat' %}selected{% endif %}>Rubiqs Chat (Scenario-Based Roleplay)</option>
+          </select>
+        </div>
+      
+        
+      </div>
+      
+           
+      
+      <div id="chat-fields"
+        class="{% if assignment.assignment_type != 'interactive_chat' %}hidden{% endif %}" style="margin-bottom: 2rem;">
+        <div class="form-group wide">
+          <label for="scenario_intro">Scenario Introduction</label>
+          <textarea name="scenario_intro" rows="3" class="rich-text">{{ assignment.scenario_intro or '' }}</textarea>
+        </div>
+      
+        <div class="form-group wide">
+          <label for="gpt_persona">GPT Persona</label>
+          <textarea name="gpt_persona" rows="3" class="rich-text">{{ assignment.gpt_persona or '' }}</textarea>
+        </div>
+      
+        <div class="form-group wide">
+          <label for="student_goal">Student Goal in the Chat</label>
+          <textarea name="student_goal" rows="3" class="rich-text">{{ assignment.student_goal or '' }}</textarea>
+        </div>
+      
+        <div class="form-group wide">
+          <label for="rubric_criteria">Rubric Criteria</label>
+          <textarea name="rubric_criteria" rows="3" class="rich-text">{{ assignment.rubric_criteria or '' }}</textarea>
+        </div>
+      </div>
+     
+      
+       
+  
+        <div class="row">
+          <div class="form-group third">
+            <label for="total_points">Total Points</label>
+            <input type="number" name="total_points" id="total_points" value="{{ assignment.total_points }}" placeholder="e.g. 60" class="form-control" />
+            <div style="margin-top: 0.5rem;">
+              <label style="font-size: 0.9rem;">
+                <input type="checkbox"
+                       id="complete_incomplete"
+                       name="complete_incomplete"
+                       value="true"
+                       {% if assignment.complete_incomplete %}checked{% endif %}
+                       onchange="togglePointField()" />
+                Grade as Complete/Incomplete
+              </label>
+            </div>
+          </div>
+        
+        
+      
+          <div class="form-group third">
+            <label for="grade_level">Grade Level</label>
+            <select name="grade_level" id="grade_level" class="form-control">
+              <option value="">Select Level</option>
+              <option value="middle_school" {% if assignment.grade_level == 'middle_school' %}selected{% endif %}>Middle School</option>
+              <option value="high_school" {% if assignment.grade_level == 'high_school' %}selected{% endif %}>High School</option>
+              <option value="college" {% if assignment.grade_level == 'college' %}selected{% endif %}>College</option>
+            </select>
+          </div>
+          
+      
+        <div class="form-group third">
+          <label for="grading_difficulty">Grading Difficulty</label>
+          <select name="grading_difficulty" id="grading_difficulty" class="form-control">
+            <option value="">Select Difficulty</option>
+            <option value="easy" {% if assignment.grading_difficulty == 'easy' %}selected{% endif %}>Easy</option>
+            <option value="medium" {% if assignment.grading_difficulty == 'medium' %}selected{% endif %}>Medium</option>
+            <option value="hard" {% if assignment.grading_difficulty == 'hard' %}selected{% endif %}>Hard</option>
+          </select>          
+        </div>
+      </div>
+
+      <!-- ✅ Clean 50/50 row: inline submission + model -->
+    <div class="row">
+      <div class="form-group" style="flex: 1 1 48%;">
+        <label for="allow_inline_submission">Allow Inline Submission</label>
+        <select name="allow_inline_submission" id="allow_inline_submission" class="form-control">
+          <option value="no" {% if not assignment.allow_inline_submission %}selected{% endif %}>No – file upload only</option>
+          <option value="yes" {% if assignment.allow_inline_submission %}selected{% endif %}>Yes – students type directly</option>
+        </select>
+        
+      </div>
+      <div class="form-group" style="flex: 1 1 48%;">
+        <label for="gpt_model">AI Model</label>
+        <select name="gpt_model" id="gpt_model" class="form-control">
+          <option value="gpt-4" {% if assignment.gpt_model == 'gpt-4' %}selected{% endif %}>GPT-4 (Best for thoughtful, detailed feedback)</option>
+          <option value="gpt-3.5-turbo" {% if assignment.gpt_model == 'gpt-3.5-turbo' %}selected{% endif %}>GPT-3.5 (Best for fast, structured form grading)</option>
+          <option value="json" {% if assignment.gpt_model == 'json' %}selected{% endif %}>Answer Key Only (Use for filled-out PDFs)</option>
+        </select>        
+      </div>
+    
+    
+    </div>
+    
+    <div class="row">
+      <div class="form-group wide">
+        <label>Custom AI Grading Instructions</label>
+        <textarea name="ai_notes" id="ai_notes" rows="4" class="rich-text">{{ assignment.ai_notes }}</textarea>
+      </div>
+
+    <!-- Gospel-Centered Toggle -->
+    <div class="row" style="align-items: center;">
+      <div class="form-group wide">
+        <label style="margin-right: 1rem;">
+          Enable Gospel-Centered Feedback?
+        </label>
+        <div style="display: inline-flex; gap: 1rem; align-items: center;">
+          <label class="toggle-option">
+            <input type="radio" name="faith_integration" value="true" onchange="toggleGospelFields()"> YES
+          </label>
+          <label class="toggle-option">
+            <input type="radio" name="faith_integration" value="false" onchange="toggleGospelFields()"> NO
+          </label>
+          <span style="font-weight: normal; color: #666; margin-left: 1rem;">
+            Adds gospel references to AI feedback when enabled.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden Inputs -->
+    
+    <input type="hidden" name="instructor_approval" id="instructorApprovalValue" value="false" />
+    
+    
+    <div id="gospel-fields-panel" style="display: none; margin-top: 1.5rem;">
+      <div class="form-group wide">
+        <label for="gospel_themes">Gospel-Centered Themes or Principles to Emphasize</label>
+        <textarea name="gospel_themes" id="gospel_themes" rows="3" class="rich-text">{{ assignment.gospel_themes or '' }}</textarea>
+
+    
+      </div>
+      <div class="form-group wide">
+        <label for="scriptural_references">Scriptural References or Quotes to Include</label>
+        <textarea name="scriptural_references" id="scriptural_references" rows="3" class="rich-text">{{ assignment.scriptural_references or '' }}</textarea>
+      </div>
+    </div>
+      
+      
+      
+      <div class="row" style="align-items: center;">
+        <div class="form-group third" style="display: flex; align-items: center; gap: 1.25rem;">
+          <label style="margin: 0; white-space: nowrap;">Instructor Review</label>
+          <div style="display: flex; gap: 1rem;">
+            <label class="toggle-option {% if assignment.instructor_approval %}active{% endif %}">
+              <input type="radio" name="instructor_approval" value="true" {% if assignment.instructor_approval %}checked{% endif %}> Yes
+            </label>
+            <label class="toggle-option {% if not assignment.instructor_approval %}active{% endif %}">
+              <input type="radio" name="instructor_approval" value="false" {% if not assignment.instructor_approval %}checked{% endif %}> No
+            </label>
+          </div>
+          <div class="instruction-note" style="font-size: 0.9rem;">
+            If set to Yes, this assignment will require instructor review before grading is posted.
+          </div>
+        </div>
+      </div>
+
+      <!-- NEW: hidden field so the edit form also submits the setup-name "requires_review" -->
+      <input type="hidden" name="requires_review" id="requiresReviewValue"
+      value="{{ 'true' if assignment.requires_review or assignment.instructor_approval else 'false' }}">
+      
+    
+
+    <input type="hidden" name="requires_review" value="{{ 'true' if assignment.requires_review else 'false' }}">
+    <input type="hidden" name="gospel_enabled" value="{{ 'true' if assignment.faith_integration else 'false' }}">
+
+  
+    <button type="submit" class="submit">💾 Save Changes</button>
+    <button type="button" class="submit" style="background-color: #d9534f;" onclick="confirmDeleteAssignment('{{ assignment.assignment_title }}')">
+      🗑 Delete Assignment
+    </button>
+  </form>
+</div>
+</body>
+
+  <script>
+    function deleteFile(assignmentId, fileType) {
+      console.log("🧪 deleteFile called with:", assignmentId, fileType);
+
+      if (!confirm("Are you sure you want to remove this file?")) return;
+  
+      fetch('/delete-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assignment_id: assignmentId,
+          file_type: fileType
+        })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to delete file.");
+        return res.json();
+      })
+      .then(data => {
+        if (data.success) {
+          alert("File deleted.");
+          location.reload(); // Reload the page to update the view
+        } else {
+          alert("Could not delete the file.");
+        }
+      })
+      .catch(err => {
+        alert("Error: " + err.message);
+      });
+    }
+  </script>
+  
+  <script>
+    function deleteAssignment(assignmentTitle) {
+      if (!confirm("Are you sure you want to permanently delete this assignment?")) return;
+    
+      fetch('/delete-assignment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignment_title: assignmentTitle })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Assignment deleted successfully.');
+          location.reload(); // 🔥 Refresh to show updated list
+        } else {
+          alert('Error deleting assignment: ' + (data.error || 'Unknown error.'));
+        }
+      })
+      .catch(error => {
+        alert('Request failed: ' + error.message);
+      });
+    }
+    </script>
+
+    <script>
+      document.getElementById("assignment_type").addEventListener("change", function () {
+        const isChat = this.value === "interactive_chat";
+        document.getElementById("chat-fields").style.display = isChat ? "block" : "none";
+      });
+      
+    </script>
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const typeSelect = document.getElementById("assignment_type");
+      const chatFields = document.getElementById("chat-fields");
+  
+      function updateChatVisibility() {
+        const isChat = typeSelect.value === "interactive_chat";
+        chatFields.style.display = isChat ? "block" : "none";
+      }
+  
+      typeSelect.addEventListener("change", updateChatVisibility);
+      updateChatVisibility();  // Ensure correct visibility on load
+    });
+  </script>
+ 
+ <script>
+  function togglePointField() {
+    const checkbox = document.getElementById("complete_incomplete");
+    const pointsInput = document.getElementById("total_points");
+    if (checkbox && pointsInput) {
+      pointsInput.disabled = checkbox.checked;
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", togglePointField);
+</script>
+
+<script src="{{ url_for('static', filename='tinymce/js/tinymce/tinymce.min.js') }}"></script>
+
+<script>
+  tinymce.init({
+    selector: '.rich-text',
+    plugins: 'autoresize table lists link code fullscreen',
+    toolbar: 'undo redo | bold italic underline | bullist numlist | link | code fullscreen',
+    menubar: false,
+    height: 250,
+    branding: false,
+    skin_url: '/static/tinymce/js/tinymce/skins/ui/oxide',
+    content_css: '/static/tinymce/js/tinymce/skins/content/default/content.min.css',
+    theme: 'silver',
+    setup: function (editor) {
+      editor.on('change', function () {
+        editor.save();
+      });
+    }
+  });
+</script>
+
+<script>
+  // Keep "requires_review" (setup name) in sync with the radio group (edit name)
+  (function () {
+    const hidden = document.getElementById('requiresReviewValue');
+    const radios = document.querySelectorAll('input[name="instructor_approval"]');
+    radios.forEach(r => {
+      r.addEventListener('change', () => {
+        hidden.value = r.value; // "true" or "false"
+      });
+      if (r.checked) hidden.value = r.value;
+    });
+  })();
+</script>
+
+  
+  
+
+</body>
+</html>
+
+

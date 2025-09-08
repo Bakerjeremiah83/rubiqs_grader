@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rubiqs Grader | Admin</title>
+  <style>
+    /* Include padding inside declared widths (matches your correct example) */
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      display: flex;
+      background: #f4f6f8;
+      color: #1f3a54;
+      height: 100vh;
+    }
+
+    /* Sidebar (now identical sizing/spacing to Math) */
+    .sidebar {
+      width: 240px;
+      background: #1f3a54;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+      height: 100vh;
+      overflow-y: auto;
+      /* redundant but explicit: keep border-box on the sidebar */
+      box-sizing: border-box;
+    }
+
+    /* If any legacy nav link styles exist, neutralize their padding inside sidebar */
+    .sidebar nav a { padding: 0; background: none; border-radius: 0; }
+
+    /* Center + size Rubiqs Suite logo */
+    .sidebar img.logo {
+      display: block;
+      max-width: 160px;
+      margin: 0 auto 1rem;  /* centers horizontally, keeps bottom spacing */
+    }
+
+    /* Tile column layout */
+    .sidebar .sidebar-tile-column {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1rem 0;
+    }
+
+    /* Tiles (same padding/shadow/hover as the correct example) */
+    .sidebar .sidebar-tile {
+      background: #fff;
+      border-radius: 12px;
+      padding: .5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform .06s ease, box-shadow .2s ease, background .2s ease;
+      box-shadow: 0 6px 16px rgba(0,0,0,.08);
+    }
+
+    .sidebar .sidebar-tile:hover {
+      background: #f2f5f8;
+      transform: translateY(-1px);
+    }
+
+    .sidebar .sidebar-tile img {
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    /* Main (unchanged) */
+    .main {
+      flex-grow: 1;
+      padding: 2rem;
+      background: white;
+      overflow-y: auto;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 2rem;
+      width: 100%;
+      max-width: 1100px;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2rem;
+    }
+
+    .top-tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      justify-content: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .top-tab {
+      background: #eee;
+      border: none;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: #1f3a54;
+      text-align: center;
+    }
+
+    .top-tab.active {
+      background: white;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      z-index: 2;
+      position: relative;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .form-group { margin-bottom: 1rem; }
+
+    label {
+      font-weight: bold;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    input[type="text"],
+    input[type="file"],
+    input[type="number"],
+    select,
+    textarea {
+      padding: 0.6rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    textarea { resize: vertical; min-height: 100px; }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group.wide { flex: 1 1 100%; }
+    .form-group.half { flex: 1 1 48%; }
+    .form-group.third { flex: 1 1 30%; }
+    .form-group.quarter { flex: 1 1 22%; }
+
+    .instruction-note {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 0.25rem;
+    }
+
+    .toggle-option {
+      padding: 0.4rem 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #f9f9f9;
+      font-weight: 500;
+    }
+
+    .toggle-option.active {
+      background: #1f3a54;
+      color: white;
+      border-color: #1f3a54;
+    }
+
+    button.submit {
+      padding: 0.75rem 1.5rem;
+      font-weight: bold;
+      background: #1f3a54;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+
+    button.submit:hover { background: #163148; }
+
+    /* Rubiqs Grader heading in main panel */
+    .grader-heading {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #1f3a54;
+      margin-bottom: 1.5rem;
+      margin-top: 0;
+    }
+
+    button.submit.secondary { background-color: #eee; color: #1f3a54; }
+    button.submit.secondary:hover { background-color: #ddd; }
+
+    .submit { display: inline-block; white-space: nowrap; }
+
+    a.submit.secondary {
+      background-color: #1f3a54;
+      color: white;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: bold;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-block;
+    }
+    a.submit.secondary:hover { background-color: #163148; }
+
+    .top-tab {
+      background: #eee;
+      border: none;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: #1f3a54;
+      text-align: center;
+    }
+    a.top-tab:hover { background-color: #ddd; }
+
+    .institution-banner {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #1f3a54;
+      background-color: #e9eff6;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      display: inline-block;
+      margin: 0.5rem 0 1.5rem;
+    }
+
+    /* Submissions table basics */
+    #submissions-table-container th.col-actions,
+    #submissions-table-container td.actions-cell {
+      width: 420px;      /* was 280px */
+      min-width: 420px;  /* enforce it even with long buttons */
+    }
+
+    /* Actions column: wider + no wrapping */
+    #submissions-table-container th.col-actions,
+    #submissions-table-container td.actions-cell {
+      width: 420px;
+      min-width: 420px;
+    }
+
+
+    /* Flex layout for buttons + spacing */
+    #submissions-table-container td.actions-cell {
+      display: flex;
+      gap: 10px;
+      flex-wrap: nowrap;   /* <-- keep all three on one line */
+      align-items: center;
+    }
+
+    /* Button reset + look */
+    .action-button {
+      position: static;                    /* prevent any accidental absolute positioning */
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .35rem;
+      padding: .45rem .8rem;
+      border-radius: .6rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: 0;
+      cursor: pointer;
+      white-space: nowrap;                 /* keep each button on one line */
+    }
+    .action-button.edit   { background:#243b53; color:#fff; }
+    .action-button.accept { background:#22c55e; color:#fff; }
+    .action-button.delete { background:#ef4444; color:#fff; }
+
+    /* === Fix Actions column alignment & button sizing === */
+    #submissions-table-container table { table-layout: fixed; }
+
+    #submissions-table-container th.col-actions,
+    #submissions-table-container td.actions-cell {
+      width: 420px;
+      min-width: 420px;
+      text-align: center;        /* center header text */
+    }
+
+    #submissions-table-container td.actions-cell {
+      display: flex;
+      justify-content: center;   /* center the buttons horizontally */
+      align-items: center;       /* center vertically */
+      gap: 12px;                 /* spacing between buttons */
+      flex-wrap: nowrap;         /* keep on one line */
+    }
+
+    /* One definitive .action-button rule for both <a> and <button> */
+    .action-button {
+      font-family: inherit;
+      font-size: 0.95rem;        /* prevent row-to-row size drift */
+      line-height: 1;            
+      height: 40px;              /* uniform height */
+      padding: 0 14px;           /* horizontal padding */
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .4rem;
+      border-radius: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+      border: 0;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .action-button.edit   { background:#243b53; color:#fff; }
+    .action-button.accept { background:#22c55e; color:#fff; }
+    .action-button.delete { background:#ef4444; color:#fff; }
+    .action-button.edit:hover   { background:#142835; }
+    .action-button.accept:hover { background:#15803d; }
+    .action-button.delete:hover { background:#b91c1c; }
+
+    /* Center all header/body cells */
+    #submissions-table-container table { table-layout: fixed; width: 100%; }
+    #submissions-table-container th,
+    #submissions-table-container td { 
+      text-align: center; 
+      vertical-align: middle;
+    }
+
+    /* Wider Student/Assignment, tight Score, fixed Actions */
+    #submissions-table-container col.col-student    { width: 28%; }
+    #submissions-table-container col.col-assignment { width: 34%; }
+    #submissions-table-container col.col-submitted  { width: 16%; }
+    #submissions-table-container col.col-status     { width: 12%; }
+    #submissions-table-container col.col-score      { width: 70px; min-width: 70px; }
+    #submissions-table-container col.col-actions    { width: 420px; min-width: 420px; }
+
+    /* Keep the actions cell centered with buttons in a row */
+    #submissions-table-container td.actions-cell {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: nowrap;
+    }
+
+
+  </style>
+</head>
+<body>
+  {% set current_tool = "grader" %}
+  <div class="sidebar">
+      <img src="/static/rubiqs-suite-logo.png" alt="Rubiqs Logo" class="logo">
+    </a>
+
+    {% if session['institution_id'] == 'byu' %}
+      <img src="/static/logos/byu-logo.png" alt="BYU Logo" class="logo">
+    {% else %}
+      <img src="/static/logos/{{ session['institution_id'] }}-logo.png" alt="{{ session['institution_id'] | capitalize }} Logo" class="logo" onerror="this.style.display='none';">
+    {% endif %}
+
+    {% set current_tool = current_tool or "" %}
+    <nav>
+      <div class="sidebar-tile-column">
+        {% if has_tool('grader') %}
+        <a href="/grader-base" class="sidebar-tile" aria-label="Rubiqs Grader">
+          <img src="/static/long-rubiqs-grader.png" alt="Rubiqs Grader">
+        </a>
+        {% endif %}
+
+      </div>
+    </nav>
+  </div>
+
+  <div class="main">
+    <h1 class="grader-heading">Rubiqs Grader</h1>
+    {% if session['institution_id'] %}
+      <div class="institution-banner">Institution: {{ session['institution_id'] }}</div>
+    {% endif %}
+    <div class="card">
+      <div class="top-tabs">
+        <button class="top-tab active" data-target="setup">Grader Setup</button>
+        <a class="top-tab" href="{{ url_for('lti.nomas_dashboard') }}">NoMas Training Dashboard</a>
+        <button class="top-tab" data-target="edit">Manage Rubiqs Grader Assignments</button>
+        <button class="top-tab" data-target="instructor">Rubiqs Grader Submissions</button>
+      </div>
+
+      <div class="tab-panel active" id="setup">
+        <form id="graderForm" method="POST" action="/save-assignment" enctype="multipart/form-data">
+          <!-- Assignment Name and Instructions -->
+          <div class="row" style="align-items: center;">
+            <div class="form-group" style="flex: 1 1 48%;">
+              <label>Assignment Name</label>
+              <input type="text" name="assignment_title" required />
+            </div>
+            <div class="form-group" style="flex: 1 1 48%; display: flex; align-items: center; height: 100%;">
+              <div class="instruction-note" style="margin: 0; transform: translateY(9px);">
+                Note: The assignment title must match the course title exactly.
+              </div>
+            </div>
+          </div>
+
+          <!-- Chat-Only Fields -->
+          <div id="chat-fields" style="margin-top: 2rem; display: none; border-top: 1px solid #ddd; padding-top: 1.5rem;">
+            <div class="form-group wide">
+              <label for="scenario_intro">Scenario Introduction</label>
+              <textarea name="scenario_intro" rows="3" placeholder="Context for the scenario..."></textarea>
+            </div>
+            <div class="form-group wide">
+              <label for="gpt_persona">GPT Persona</label>
+              <input type="text" name="gpt_persona" placeholder="e.g., Nervous 23-year-old seeking asylum" />
+            </div>
+            <div class="form-group wide">
+              <label for="student_goal">Student's Goal in the Chat</label>
+              <textarea name="student_goal" rows="3" placeholder="What should the student accomplish?"></textarea>
+            </div>
+            <div class="form-group wide">
+              <label for="rubric_criteria">Rubric Criteria</label>
+              <input type="text" name="rubric_criteria" placeholder="Empathy, Legal Accuracy, Rapport, etc." />
+            </div>
+          </div>
+
+          <!-- File Uploads -->
+          <div class="row" style="gap: 1.5rem;">
+            <div class="form-group half" id="rubric-upload-group">
+              <label for="rubric_upload">Rubric File</label>
+              <input type="file" name="rubric_upload" id="rubric_upload" accept=".json,.pdf,.docx" required />
+            </div>
+            <div class="form-group half">
+              <label for="additional_files">Additional File</label>
+              <input type="file" name="additional_files" id="additional_files" accept=".json,.pdf,.docx" />
+            </div>
+          </div>
+
+          <!-- Instructor Review Toggle -->
+          <div class="row require-toggle" style="flex-direction: row; align-items: center;">
+            <label style="margin-right: 1rem;">Requires Instructor Review</label>
+            <div class="toggle-option" data-value="true" onclick="toggleReview(this)">YES</div>
+            <div class="toggle-option" data-value="false" onclick="toggleReview(this)">NO</div>
+            <input type="hidden" name="requires_review" id="requiresReviewValue" />
+            <div class="instruction-note" style="margin-left: 1rem;">
+              If selected, submissions go to instructor review before grade/feedback is posted.
+            </div>
+          </div>
+
+          <!-- Total Points + Difficulty + Grade Level -->
+          <div class="row">
+            <div class="form-group third">
+              <label for="total_points">Total Points</label>
+              <input type="number" name="total_points" id="total_points" placeholder="e.g. 60" class="form-control" />
+              <label style="font-size: 0.9rem; margin-top: 0.5rem;">
+                <input type="checkbox" id="complete_checkbox" name="complete_incomplete" value="true" onchange="togglePointField()" />
+                Grade as Complete/Incomplete
+              </label>
+            </div>
+            <div class="form-group third">
+              <label for="grade_level">Grade Level</label>
+              <select name="grade_level" id="grade_level" class="form-control">
+                <option value="">Select Level</option>
+                <option value="middle_school">Middle School</option>
+                <option value="high_school">High School</option>
+                <option value="college">College</option>
+              </select>
+            </div>
+            <div class="form-group third">
+              <label for="grading_difficulty">Grading Difficulty</label>
+              <select name="grading_difficulty" id="grading_difficulty" class="form-control">
+                <option value="">Select Difficulty</option>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Inline Submission and AI Model -->
+          <div class="row">
+            <div class="form-group half">
+              <label for="allow_inline_submission">Allow Inline Submission</label>
+              <select name="allow_inline_submission" id="allow_inline_submission" class="form-control">
+                <option value="no">No – file upload only</option>
+                <option value="yes">Yes – students type directly</option>
+              </select>
+            </div>
+            <div class="form-group half">
+              <label for="gpt_model">AI Model</label>
+              <select name="gpt_model" id="gpt_model" class="form-control">
+                <option value="gpt-4">GPT-4 (Best for detailed feedback)</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 (Fast for forms)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Custom AI Instructions (full width) -->
+          <div class="form-group wide" style="margin-bottom: 2rem;">
+            <label>Custom AI Grading Instructions</label>
+            <textarea rows="4" name="custom_ai" class="rich-text" placeholder="Optional: Include tone, style, or rubric mapping instructions..."></textarea>
+          </div>
+
+          <!-- Gospel-Centered Toggle -->
+          <div class="row" style="align-items: center;">
+            <div class="form-group wide">
+              <label style="margin-right: 1rem;">
+                Enable Gospel-Centered Feedback?
+              </label>
+              <div style="display: inline-flex; gap: 1rem; align-items: center;">
+                <label class="toggle-option">
+                  <input type="radio" name="faith_integration" value="true" onchange="toggleGospelFields()"> YES
+                </label>
+                <label class="toggle-option">
+                  <input type="radio" name="faith_integration" value="false" onchange="toggleGospelFields()"> NO
+                </label>
+                <span style="font-weight: normal; color: #666; margin-left: 1rem;">
+                  Adds gospel references to AI feedback when enabled.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden Inputs -->
+          <input type="hidden" name="gospel_enabled" id="gospelEnabledValue" />
+          <input type="hidden" name="instructor_approval" id="instructorApprovalValue" value="false" />
+
+          <!-- Save Button -->
+          <div class="row" style="justify-content: center;">
+            <div style="text-align: center;">
+              <button type="submit" form="graderForm" class="submit" id="saveButton">💾 Save Assignment</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Manage Rubiqs Grader Assignments -->
+      <div id="edit" class="tab-panel">
+        <h2 class="section-heading">Manage Rubiqs Grader Assignments</h2>
+        <div id="assignment-table-container"></div>
+      </div>
+
+      <!-- Rubiqs Grader Submissions -->
+      <div id="instructor" class="tab-panel">
+        <h2>Grader Submissions Review</h2>
+        <div id="submissions-table-container">
+          <p>Loading submissions...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TinyMCE loader -->
+  <script src="{{ url_for('static', filename='tinymce/js/tinymce/tinymce.min.js') }}"></script>
+
+  <script>
+  (() => {
+    document.addEventListener("DOMContentLoaded", init);
+
+    async function init() {
+      wireTabs();
+      initTinyMCE();
+      await loadTables();
+    }
+
+    // --- Tabs ---
+    function wireTabs() {
+      const tabs = document.querySelectorAll(".top-tab[data-target]");
+      const panels = document.querySelectorAll(".tab-panel");
+
+      tabs.forEach(tab => {
+        tab.addEventListener("click", function () {
+          const id = this.dataset.target;
+          if (!id) return;
+          const panel = document.getElementById(id);
+          if (!panel) return;
+          tabs.forEach(t => t.classList.remove("active"));
+          panels.forEach(p => p.classList.remove("active"));
+          this.classList.add("active");
+          panel.classList.add("active");
+        });
+      });
+
+      // Support ?tab=setup|edit|instructor
+      const urlParams = new URLSearchParams(window.location.search);
+      const tab = urlParams.get("tab");
+      const validTab = tab ? document.querySelector(`.top-tab[data-target="${tab}"]`) : null;
+      if (validTab) validTab.click();
+    }
+
+    // --- TinyMCE ---
+    function initTinyMCE() {
+      if (typeof tinymce === "undefined") return;
+      tinymce.init({
+        selector: '.rich-text',
+        plugins: 'autoresize table lists link image media code fullscreen',
+        toolbar: 'undo redo | bold italic underline | bullist numlist | table | link image media | code fullscreen',
+        menubar: false,
+        height: 250,
+        branding: false,
+        skin_url: '/static/tinymce/js/tinymce/skins/ui/oxide',
+        content_css: '/static/tinymce/js/tinymce/skins/content/default/content.min.css',
+        images_upload_url: '/upload-image',
+        automatic_uploads: true,
+        images_upload_credentials: true,
+        setup: (editor) => editor.on('change', () => editor.save())
+      });
+    }
+
+    // --- Review toggle (kept global for inline onclick= handlers) ---
+    window.toggleReview = function(button) {
+      const buttons = document.querySelectorAll('.require-toggle .toggle-option');
+      buttons.forEach(b => b.classList.remove('active'));
+      button.classList.add('active');
+      const hidden = document.getElementById('requiresReviewValue');
+      if (hidden) hidden.value = button.getAttribute('data-value');
+    };
+
+    // --- Load & render tables ---
+    async function loadTables() {
+      const submissionsContainer = document.getElementById("submissions-table-container");
+      const assignmentsContainer = document.getElementById("assignment-table-container");
+      if (!submissionsContainer || !assignmentsContainer) return;
+
+      let submissions = [];
+      let assignments = [];
+
+      try {
+        const [subRes, assignRes] = await Promise.all([
+          fetch("/grader-submissions"),
+          fetch("/grader-assignments")
+        ]);
+        const subJson = await subRes.json();
+        const assignJson = await assignRes.json();
+
+        submissions = Array.isArray(subJson) ? subJson : (subJson.submissions || subJson.data || []);
+        assignments = Array.isArray(assignJson) ? assignJson : (assignJson.assignments || assignJson.data || []);
+      } catch (err) {
+        console.error("Fetch error:", err);
+      }
+
+      // — Submissions —
+      if (!submissions || submissions.length === 0) {
+        submissionsContainer.innerHTML = '<p style="text-align:center; color:#888;">No submissions yet.</p>';
+      } else {
+        const table = document.createElement("table");
+        table.style.width = "100%";
+        table.style.borderCollapse = "collapse";
+        table.style.tableLayout = "fixed";
+        table.innerHTML = `
+          <colgroup>
+            <col class="col-student">
+            <col class="col-assignment">
+            <col class="col-submitted">
+            <col class="col-status">
+            <col class="col-score">
+            <col class="col-actions">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Assignment</th>
+              <th>Submitted</th>
+              <th>Status</th>
+              <th>Score</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${submissions.map(row => {
+              const submittedRaw = row.created_at || row.submitted_at || row.submission_time || "";
+              const submitted = String(submittedRaw).slice(0,19).replace("T"," ");
+              const title = row.assignment_title || row.assignment_id || "";
+              const score = (row.score ?? row.instructor_score ?? "—");
+              const reviewed = row.reviewed ? "✅ Reviewed" : "Pending";
+              const sid = row.submission_id || row.id || "";
+              return `
+                <tr>
+                  <td>${row.user_id || row.student_id || ""}</td>
+                  <td>${title}</td>
+                  <td>${submitted}</td>
+                  <td>${reviewed}</td>
+                  <td>${score}</td>
+                  <td class="actions-cell">
+                    ${sid ? `<a href="/instructor-review?submission_id=${sid}" target="_blank" class="action-button edit">🔍 Review</a>` : `<span style="color:#888;">No ID</span>`}
+                    ${sid ? `<button class="action-button accept accept-submission-btn" data-submission-id="${sid}">✅ Accept</button>` : ""}
+                    ${sid ? `<button class="action-button delete delete-submission-btn" data-submission-id="${sid}">🗑️ Delete</button>` : ""}
+                  </td>
+                </tr>`;
+            }).join("")}
+          </tbody>
+        `;
+
+        submissionsContainer.innerHTML = "";
+        submissionsContainer.appendChild(table);
+
+        // actions
+        submissionsContainer.querySelectorAll(".accept-submission-btn, .accept").forEach(btn => {
+          btn.addEventListener("click", () => handleAccept(btn.getAttribute("data-submission-id")));
+        });
+        submissionsContainer.querySelectorAll(".delete-submission-btn").forEach(btn => {
+          btn.addEventListener("click", () => handleDeleteSubmission(btn.getAttribute("data-submission-id")));
+        });
+      }
+
+      // — Assignments —
+      if (!assignments || assignments.length === 0) {
+        assignmentsContainer.innerHTML = '<p style="text-align:center; color:#888;">No assignments found.</p>';
+      } else {
+        const getId = a => a.assignment_id ?? a.id ?? a._id ?? null;
+        const getTitle = a => (a.assignment_title || a.title || "").trim();
+        const editHref = a => {
+          const id = getId(a);
+          if (id) return `/grader-edit?assignment_id=${encodeURIComponent(id)}`;
+          const t = getTitle(a);
+          if (t) return `/grader-edit?assignment_title=${encodeURIComponent(t)}`;
+          return null;
+        };
+
+        const table = document.createElement("table");
+        table.style.width = "100%";
+        table.style.borderCollapse = "collapse";
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th style="text-align:left; padding: 0.5rem;">Assignment Title</th>
+              <th>Model</th>
+              <th>Points</th>
+              <th>Requires Review</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${assignments.map(a => {
+              const title = getTitle(a);
+              const safeTitle = (title || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+              const href = editHref(a);
+
+              const titleCell = title
+                ? `<a href="/student-demo?title=${encodeURIComponent(title)}"
+                      target="_blank"
+                      rel="noopener"
+                      style="text-decoration:none; color:#1f3a54; font-weight:500;">
+                    🔗 ${title}
+                   </a>`
+                : "—";
+
+              return `
+                <tr>
+                  <td style="padding: 0.5rem;">${titleCell}</td>
+                  <td>${a.gpt_model || "-"}</td>
+                  <td>${a.total_points ?? "-"}</td>
+                  <td>${a.instructor_approval ? "✅" : "❌"}</td>
+                  <td>
+                    ${href ? `<a href="${href}" class="action-button edit">Edit</a>` : `<span style="color:#888;">No ID/Title</span>`}
+                    <button class="action-button delete delete-assignment-btn" data-assignment-title="${safeTitle}">Delete</button>
+                  </td>
+                </tr>`;
+            }).join("")}
+          </tbody>`;
+        assignmentsContainer.innerHTML = "";
+        assignmentsContainer.appendChild(table);
+
+        assignmentsContainer.querySelectorAll(".delete-assignment-btn").forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            const title = btn.getAttribute("data-assignment-title");
+            if (!title) return alert("❌ Assignment title not found.");
+            if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
+            fetch("/delete-assignment", {
+              method: "POST",
+              headers: {"Content-Type": "application/json"},
+              body: JSON.stringify({ assignment_title: title })
+            })
+            .then(r => r.json())
+            .then(data => {
+              if (data.success) {
+                alert("✅ Assignment deleted successfully!");
+                location.reload();
+              } else {
+                alert("❌ Failed to delete assignment: " + (data.error || "Unknown error."));
+              }
+            })
+            .catch(err => {
+              console.error("❌ Error deleting assignment:", err);
+              alert("❌ Error deleting assignment.");
+            });
+          });
+        });
+      }
+    }
+
+    // --- Action handlers ---
+    function handleAccept(submissionId) {
+      if (!submissionId) return alert("❌ Missing submission ID.");
+      if (!confirm("✅ Mark this submission as accepted?")) return;
+      fetch("/instructor-review/accept", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ submission_id: submissionId })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          alert("✅ Submission accepted!");
+          location.reload();
+        } else {
+          alert("❌ Accept failed: " + (data.error || "Unknown error."));
+        }
+      })
+      .catch(err => {
+        console.error("❌ Error accepting submission:", err);
+        alert("❌ Error accepting submission.");
+      });
+    }
+
+    function handleDeleteSubmission(submissionId) {
+      if (!submissionId) return alert("❌ Missing submission ID.");
+      if (!confirm("🗑️ Are you sure you want to delete this submission?")) return;
+      fetch("/delete-submission", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ submission_id: submissionId })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          alert("✅ Submission deleted!");
+          location.reload();
+        } else {
+          alert("❌ Failed to delete: " + (data.error || "Unknown error"));
+        }
+      })
+      .catch(err => {
+        console.error("❌ Error deleting submission:", err);
+        alert("❌ Error deleting submission.");
+      });
+    }
+
+    // --- Optional toast ---
+    window.comingSoon = function() {
+      const toast = document.createElement("div");
+      toast.textContent = "🚧 Rubiqs Architect is coming soon!";
+      toast.style.position = "fixed";
+      toast.style.bottom = "2rem";
+      toast.style.right = "2rem";
+      toast.style.background = "#1f3a54";
+      toast.style.color = "white";
+      toast.style.padding = "1rem 1.5rem";
+      toast.style.borderRadius = "10px";
+      toast.style.fontWeight = "bold";
+      toast.style.boxShadow = "0 6px 16px rgba(0,0,0,0.2)";
+      toast.style.zIndex = 9999;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    };
+  })();
+  </script>
+</body>
+</html>

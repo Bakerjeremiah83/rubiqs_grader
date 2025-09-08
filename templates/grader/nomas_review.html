@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rubiqs | NoMas Review</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #1f3a54; /* Rubiqs blue only */
+      color: #333;
+      padding: 2rem;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .card {
+      background: white;
+      padding: 2rem;
+      max-width: 1000px;
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      max-height: 70px;
+      margin-right: 1.25rem;
+    }
+
+    .brand-text h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      color: #1f3a54;
+    }
+
+    .brand-text .tagline {
+      font-size: 1rem;
+      color: #7f8c8d;
+    }
+
+    .meta {
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+      color: #555;
+    }
+    .meta strong { color: #1f3a54; }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      color: #fff;
+    }
+    .btn.back { background: #475569; }
+    .btn.accept { background: #16a34a; }
+    .btn.delete { background: #dc2626; }
+    .btn.notes { background: #1f3a54; }
+
+    .viewer {
+      margin-bottom: 1.5rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fafafa;
+    }
+    .viewer .viewer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0.9rem;
+      background: #f3f4f6;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.9rem;
+      color: #374151;
+    }
+    .viewer .viewer-actions a,
+    .viewer .viewer-actions button {
+      display: inline-block;
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      background: #1f3a54;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .viewer iframe {
+      display: block;
+      width: 100%;
+      height: 720px;
+      border: 0;
+      background: #fff;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      padding: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .footer-note {
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      color: #999;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand-header">
+      <img src="/static/rubiqs-logo.png" alt="Rubiqs Logo" class="logo">
+      <div class="brand-text">
+        <h1>NoMas Review</h1>
+        <div class="tagline">NoMas Training Submissions</div>
+      </div>
+    </div>
+
+    <div class="meta">
+      <p><strong>Assignment:</strong> {{ submission.assignment_title }}</p>
+      <p><strong>Student:</strong> {{ submission.user_id or submission.student_id }}</p>
+      <p><strong>Form:</strong> {{ (submission.form_type or '')|upper }}</p>
+      <p><strong>Submitted:</strong> {{ (submission.submitted_at or submission.submission_time or '')[:19].replace('T',' ') }}</p>
+    </div>
+
+    <div class="actions">
+      <a class="btn back" href="/nomas-dashboard">← Back</a>
+
+      <form method="POST" action="/nomas/approve-and-send" style="display:inline;">
+        <input type="hidden" name="submission_id" value="{{ submission.submission_id }}">
+        <button class="btn accept" type="submit">Accept</button>
+      </form>
+
+      <form method="POST" action="/nomas/delete-submission" style="display:inline;" onsubmit="return confirm('Delete this submission?');">
+        <input type="hidden" name="submission_id" value="{{ submission.submission_id }}">
+        <button class="btn delete" type="submit">Delete</button>
+      </form>
+    </div>
+
+    {# ---------- PDF VIEWER ---------- #}
+    {% set pdf_url = submission.student_file_url or '' %}
+    {% if pdf_url and ('.pdf' in pdf_url|lower) %}
+      <div class="viewer" id="viewer" data-pdf-url="{{ pdf_url|e }}">
+        <div class="viewer-header">
+          <div><strong>PDF Preview</strong></div>
+          <div class="viewer-actions">
+            <a id="downloadBtn" class="viewer-link" target="_blank" rel="noopener">Download PDF</a>
+          </div>
+          
+        </div>
+        <!-- Default to Google Viewer; JS will set src -->
+        <iframe id="gviewer" title="Google PDF Viewer" referrerpolicy="no-referrer"></iframe>
+        <iframe id="nativeviewer" title="Native PDF Viewer" style="display:none;"></iframe>
+      </div>
+    {% elif pdf_url %}
+      <div class="viewer" style="padding: 1rem;">
+        <div class="viewer-header" style="border-radius: 8px;">
+          <div><strong>File</strong></div>
+          <div class="viewer-actions">
+            <a href="{{ pdf_url }}" target="_blank" rel="noopener">Open File</a>
+          </div>
+        </div>
+        <div style="padding: 0.9rem; color:#374151; font-size: 0.95rem;">
+          A preview is available only for PDF files. Use “Open File” to view this submission.
+        </div>
+      </div>
+    {% endif %}
+
+    <form method="POST" action="/nomas/save-notes">
+      <input type="hidden" name="submission_id" value="{{ submission.submission_id }}">
+      <input type="hidden" name="next_url"
+              value="{{ url_for('lti.nomas_review', submission_id=submission.submission_id) }}">
+      <textarea name="instructor_notes">{{ submission.instructor_notes or '' }}</textarea>
+      <div style="margin-top:0.75rem;">
+        <button class="btn notes" type="submit">Save Notes</button>
+      </div>
+    </form>
+    
+    
+
+    <div class="footer-note">
+      &copy; 2025 J. Baker Design — Rubiqs NoMas
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const container = document.getElementById('viewer');
+      if (!container) return;
+
+      const rawUrl = container.getAttribute('data-pdf-url') || '';
+      const gviewer = document.getElementById('gviewer');
+      const nativeviewer = document.getElementById('nativeviewer');
+      const toggleBtn = document.getElementById('toggleMode');
+
+      // Build Google viewer URL client-side to avoid encoding issues
+      const gviewSrc = 'https://docs.google.com/gview?embedded=true&url=' + encodeURIComponent(rawUrl);
+      gviewer.src = gviewSrc;
+
+      // Prepare native viewer as optional fallback/toggle
+      nativeviewer.src = rawUrl + (rawUrl.includes('#') ? '' : '#toolbar=1');
+
+      let googleMode = true;
+      toggleBtn.addEventListener('click', () => {
+        googleMode = !googleMode;
+        if (googleMode) {
+          gviewer.style.display = '';
+          nativeviewer.style.display = 'none';
+        } else {
+          gviewer.style.display = 'none';
+          nativeviewer.style.display = '';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

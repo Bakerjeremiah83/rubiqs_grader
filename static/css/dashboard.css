@@ -1,0 +1,18 @@
+/* static/css/dashboard.css */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: #111; background: #fafafa; }
+.container { max-width: 1120px; margin: 0 auto; padding: 16px; }
+.site-header { background: #0b4; color: #fff; }
+.site-header h1 { margin: 0; padding: 12px 0; font-size: 20px; }
+.page-title { margin: 16px 0; }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 16px; }
+.tile { display: block; padding: 16px; background: #fff; border-radius: 12px; text-decoration: none; color: inherit; border: 1px solid #eee; }
+.tile:hover { border-color: #0b4; }
+.tile-icon { font-size: 32px; }
+.tile-title { font-weight: 600; margin-top: 8px; }
+.tile-desc { color: #555; margin-top: 6px; font-size: 14px; }
+
+.panel-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; margin: 16px 0; }
+.btn { display: inline-block; padding: 8px 12px; border-radius: 8px; background: #0b4; color: #fff; text-decoration: none; }
+.btn:hover { opacity: 0.9; }

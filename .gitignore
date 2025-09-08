@@ -1,0 +1,34 @@
+# macOS
+.DS_Store
+
+# Env / secrets
+.env
+.env.*
+secrets/
+.flask_session/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.coverage
+.coverage.*
+.pytest_cache/
+.mypy_cache/
+ruff_cache/
+
+# Virtualenvs
+venv/
+.venv/
+env/
+
+# Logs
+*.log
+
+# Node / build artifacts (keep if you actually build here)
+node_modules/
+dist/
+build/
+
+# If you truly generate static assets elsewhere, you may add:
+# static/

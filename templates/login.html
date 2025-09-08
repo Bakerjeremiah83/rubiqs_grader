@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rubiqs Suite Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://use.typekit.net/lxu4vzt.css" />
+
+  <style>
+    :root{
+      --rubiqs-navy: #1f3a54;
+      --btn-teal: #0d7183;
+      --btn-teal-hover: #11859a;
+      --panel-radius: 28px;
+    }
+
+    html, body { height: 100%; }
+    body{
+      margin: 0;
+      font-family: "tachyon", sans-serif;
+      background: var(--rubiqs-navy);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ===== Login Card ===== */
+    .login-card{
+      position: relative;
+      width: min(600px, 92vw);
+      padding: 28px 32px 30px;
+      border-radius: var(--panel-radius);
+      background: linear-gradient(145deg,#ffffff 0%,#f4f6f9 42%,#e9edf3 65%,#ffffff 100%);
+      box-shadow:
+        0 34px 80px rgba(16, 24, 40, 0.32),
+        0 14px 30px rgba(16, 24, 40, 0.18),
+        0  2px  6px rgba(16, 24, 40, 0.08),
+        inset 0  4px  6px rgba(255,255,255,0.95),
+        inset 0 18px 28px rgba(255,255,255,0.60),
+        inset 0 -8px 12px rgba(0,0,0,0.14);
+    }
+
+    /* ===== Logo ===== */
+    .logo-wrap{
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo-wrap img{
+      width: 80%;          /* make smaller */
+      max-width: 360px;    /* cap size */
+      height: auto;
+      display: inline-block;
+    }
+
+    /* ===== Form ===== */
+    form{ margin-top: 10px; }
+    .form-group{ margin-bottom: 16px; }
+    .input {
+      display: block;
+      width: calc(100% - 8px);   /* shrink so both sides have equal inset */
+      box-sizing: border-box;    /* count padding inside width */
+      margin: 0 auto 16px auto;  /* centers and gives bottom space */
+      padding: 14px 16px;
+      border: none;
+      border-radius: 14px;
+      background: #f7f8fb;
+      color: #0f2030;
+      font-size: 16px;
+      box-shadow:
+        0 2px 6px rgba(16, 24, 40, 0.08),
+        inset 0 2px 2px rgba(255,255,255,0.9);
+      outline: none;
+    }
+
+
+    .input::placeholder{ color: #9aa4af; }
+    .input:focus{
+      background: #fff;
+      box-shadow:
+        0 0 0 3px rgba(31,58,84,.28),
+        0 6px 14px rgba(16,24,40,.14),
+        inset 0 2px 2px rgba(255,255,255,0.9);
+    }
+
+    /* ===== Button ===== */
+    .btn{
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 18px;
+      background: var(--btn-teal);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .btn:hover{
+      background: var(--btn-teal-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 22px rgba(16,24,40,0.24);
+    }
+
+    /* Flash + error */
+    .flash{
+      background:#fff3cd;
+      color:#1a1e26;
+      padding:.75rem 1rem;
+      margin: .25rem 0 1rem;
+      border-radius:.5rem;
+      border:1px solid #ffeeba;
+      font-size:14px;
+      font-weight:500;
+    }
+    .error{
+      color:#cc2b2b;
+      margin-bottom:.65rem;
+      font-size:14px;
+    }
+
+    @media(max-width:640px){
+      .login-card{ padding: 22px 20px; }
+      .logo-wrap img{ width: 90%; max-width: 280px; }
+    }
+
+    /* Footer link (bottom-right, same tone as placeholders) */
+    .login-card { display:flex; flex-direction:column; }
+    .form-footer {
+      margin-top: 8px;
+      text-align: right;
+      font-size: 13px;          /* small */
+      color: #9aa4af;           /* matches placeholder tone */
+    }
+    .form-footer a {
+      color: #0d7183;           /* teal */
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .form-footer a:hover { text-decoration: underline; }
+
+  </style>
+</head>
+<body>
+
+  <main class="login-card" role="main" aria-label="Rubiqs Suite Login">
+    <!-- Logo -->
+    <div class="logo-wrap">
+      <img src="{{ url_for('static', filename='rubiqs-login.png') }}" alt="RUBIQS Logo" />
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash">
+          {% for message in messages %}
+            <div class="flash-item">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" autocomplete="on">
+      <div class="form-group">
+        <input class="input" type="text" name="username" placeholder="Username" required />
+      </div>
+      <div class="form-group">
+        <input class="input" type="password" name="password" placeholder="Password" required />
+      </div>
+      <button class="btn" type="submit">LOGIN</button>
+    </form>
+    <div class="form-footer">
+      Need an account?
+      <a href="{{ url_for('lti.public_signup') }}">Create one</a>
+    </div>
+    
+    
+  </main>
+
+</body>
+</html>
