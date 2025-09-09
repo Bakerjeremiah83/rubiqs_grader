@@ -337,46 +337,15 @@
     <div id="manage" class="tab-panel card-body">
       <h3 style="margin-bottom: 1rem;">Edit NoMas Assignments</h3>
 
-      {% if assignments %}
-      <table style="width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden;">
-        <thead style="background-color: #f8f8f8;">
-          <tr>
-            <th style="text-align: left; padding: 0.5rem;">Title</th>
-            <th style="text-align: left; padding: 0.5rem;">Form</th>
-            <th style="text-align: left; padding: 0.5rem;">Answer Key</th>
-            <th style="text-align: left; padding: 0.5rem;">Created</th>
-            <th style="padding: 0.5rem;"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for a in assignments %}
-          <tr style="border-top: 1px solid #ddd;">
-            <td style="padding: 0.5rem;">
-              <a href="/student-demo?title={{ a.assignment_title | urlencode }}" target="_blank">
-                🔗 {{ a.assignment_title }}
-              </a>
-            </td>
-            <td style="padding: 0.5rem;">{{ a.form_type | upper }}</td>
-            <td style="padding: 0.5rem;">
-              {% if a.rubric_file %}
-              <a href="{{ a.rubric_file }}" target="_blank">View</a>
-              {% else %}
-              <span style="color: #999;">None</span>
-              {% endif %}
-            </td>
-            <td style="padding: 0.5rem;">{{ a.created_at[:10] }}</td>
-            <td style="padding: 0.5rem;">
-              <a href="/edit-uscis-assignment/{{ a.assignment_id }}" class="submit-button" style="padding: 0.4rem 0.75rem; font-size: 0.9rem;">Edit</a>
-              <button class="submit-button danger" style="margin-left: 0.5rem;" onclick="deleteUSCISAssignment('{{ a.assignment_id }}')">Delete</button>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p style="color: #777;">No assignments found.</p>
-      {% endif %}
+      <!-- New dynamic list (populated by the script you added) -->
+      <section class="nomas-assignments" style="margin:0 auto 1rem; max-width:100%; width:100%;">
+        <div id="nomas-assignment-table"></div>
+        <p id="nomas-assignment-empty" style="display:none; text-align:center; color:#6b7280;">
+          No assignments found.
+        </p>
+      </section>
     </div>
+
 
     <!-- === TAB 4: View NoMas Submissions (NoMas-only) === -->
     <div id="submissions" class="tab-panel card-body">
@@ -595,6 +564,144 @@
       .catch(() => alert("❌ Failed to delete assignment (network or server error)."));
     }
   </script>
+  <script>
+    (function () {
+      // Reuse the same endpoint that powers Grader’s list
+      const ENDPOINT = "/grader-assignments";
+    
+      // Utilities (same behavior as in Grader)
+      function escapeAttr(s) { return String(s || "").replace(/"/g, "&quot;"); }
+      function getId(a)            { return a.assignment_id ?? a.id ?? a._id ?? null; }
+      function getTitle(a)         { return (a.assignment_title || a.title || "").trim(); }
+      function getDisplayTitle(a)  { return (a.display_title || a.assignment_title || a.title || "").trim(); }
+      function getSlug(a)          { return (a.slug || "").trim(); }
+      function getLmsLinkTitle(a)  { return (a.lms_link_title || getDisplayTitle(a)).trim(); }
+    
+      // Copy helpers (same as Grader page)
+      function copyLtiParams(slug, lmsTitle) {
+        const lines = [];
+        if (slug)     lines.push(`rubiqs_slug=${slug}`);
+        if (lmsTitle) lines.push(`rubiqs_link_title=${lmsTitle}`);
+        const text = lines.join('\n') || 'rubiqs_slug=\nrubiqs_link_title=';
+        navigator.clipboard.writeText(text)
+          .then(() => alert('✅ LTI params copied:\n\n' + text))
+          .catch(() => window.prompt('Copy these LTI params:', text));
+      }
+    
+      function copyEmbedCode(slug) {
+        if (!slug) {
+          alert("❌ No slug available for this assignment.");
+          return;
+        }
+        const origin = window.location.origin;
+        const src = `${origin}/embed/${encodeURIComponent(slug)}`;
+        const iframe = `<iframe src="${src}" width="100%" height="640" frameborder="0" allow="clipboard-write; microphone; camera; display-capture; fullscreen" allowfullscreen title="Rubiqs Grader: ${slug}"></iframe>`;
+        navigator.clipboard.writeText(iframe)
+          .then(() => alert('✅ Embed code copied to clipboard!'))
+          .catch(() => window.prompt('Copy this embed code:', iframe));
+      }
+    
+      async function loadNomasAssignments() {
+        const wrap   = document.getElementById("nomas-assignment-table");
+        const empty  = document.getElementById("nomas-assignment-empty");
+        if (!wrap) return;
+    
+        let assignments = [];
+        try {
+          const res  = await fetch(ENDPOINT);
+          const data = await res.json();
+          assignments = Array.isArray(data) ? data : (data.assignments || data.data || []);
+        } catch (e) {
+          console.error("Failed to fetch assignments:", e);
+        }
+    
+        if (!assignments || assignments.length === 0) {
+          if (empty) empty.style.display = "block";
+          wrap.innerHTML = "";
+          return;
+        }
+    
+        const table = document.createElement("table");
+        table.style.width = "100%";
+        table.style.borderCollapse = "collapse";
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:.5rem;">Title / Slug</th>
+              <th>Model</th>
+              <th>Points</th>
+              <th>Review</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${assignments.map(a => {
+              const displayTitle = getDisplayTitle(a);
+              const slug         = getSlug(a);
+              const lmsTitle     = getLmsLinkTitle(a);
+              const edit = (() => {
+                const id = getId(a);
+                if (id) return `/grader-edit?assignment_id=${encodeURIComponent(id)}`;
+                const t  = getTitle(a);
+                if (t)  return `/grader-edit?assignment_title=${encodeURIComponent(t)}`;
+                return null;
+              })();
+    
+              const titleLink = slug
+                ? `<a href="/embed/${encodeURIComponent(slug)}" target="_blank" rel="noopener" style="color:#1f3a54; font-weight:600; text-decoration:none;">${displayTitle || '(untitled)'}</a>`
+                : (displayTitle
+                    ? `<a href="/student-demo?title=${encodeURIComponent(displayTitle)}" target="_blank" rel="noopener" style="color:#1f3a54; font-weight:600; text-decoration:none;">${displayTitle}</a>`
+                    : '(untitled)');
+    
+              return `
+                <tr>
+                  <td style="padding:.5rem;">
+                    <div style="text-align:left;">
+                      <div>${titleLink}</div>
+                      <div style="font-size:.85rem; color:#6b7280;">${slug ? 'slug: ' + slug : 'no slug'}</div>
+                    </div>
+                  </td>
+                  <td>${a.gpt_model || '-'}</td>
+                  <td>${a.total_points ?? '-'}</td>
+                  <td>${a.instructor_approval ? '✅' : '❌'}</td>
+                  <td style="display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap;">
+                    ${edit ? `<a class="action-button" style="background:#243b53; color:#fff; padding:.45rem .8rem; border-radius:10px; font-weight:700; text-decoration:none;" href="${edit}">Edit</a>` : `<span style="color:#888;">No ID/Title</span>`}
+                    <button class="action-button copy-params" data-slug="${escapeAttr(slug)}" data-lms="${escapeAttr(lmsTitle)}" style="background:#243b53; color:#fff; padding:.45rem .8rem; border-radius:10px; font-weight:700;">Copy Params</button>
+                    <button class="action-button copy-embed"  data-slug="${escapeAttr(slug)}" style="background:#243b53; color:#fff; padding:.45rem .8rem; border-radius:10px; font-weight:700;">Copy Embed</button>
+                  </td>
+                </tr>`;
+            }).join("")}
+          </tbody>
+        `;
+    
+        wrap.innerHTML = "";
+        wrap.appendChild(table);
+    
+        // Wire copy buttons
+        wrap.querySelectorAll(".copy-params").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const slug = btn.getAttribute("data-slug") || "";
+            const lms  = btn.getAttribute("data-lms") || "";
+            copyLtiParams(slug, lms);
+          });
+        });
+        wrap.querySelectorAll(".copy-embed").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const slug = btn.getAttribute("data-slug") || "";
+            copyEmbedCode(slug);
+          });
+        });
+      }
+    
+      // Kick it off when DOM is ready
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", loadNomasAssignments);
+      } else {
+        loadNomasAssignments();
+      }
+    })();
+    </script>
+    
 </body>
 
 

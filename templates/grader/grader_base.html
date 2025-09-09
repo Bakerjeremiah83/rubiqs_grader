@@ -400,18 +400,35 @@
 
       <div class="tab-panel active" id="setup">
         <form id="graderForm" method="POST" action="/save-assignment" enctype="multipart/form-data">
-          <!-- Assignment Name and Instructions -->
-          <div class="row" style="align-items: center;">
-            <div class="form-group" style="flex: 1 1 48%;">
-              <label>Assignment Name</label>
-              <input type="text" name="assignment_title" required />
+          <!-- Assignment identity (H5P-style) -->
+          <div class="row" style="align-items: flex-start; gap: 1rem;">
+            <div class="form-group half">
+              <label for="display_title">Display Title (shown in Rubiqs)</label>
+              <input id="display_title" name="display_title" type="text" placeholder="e.g., Narrative Writing: Show vs. Tell" />
+              <div class="instruction-note">If blank, we’ll fall back to Assignment Title.</div>
             </div>
-            <div class="form-group" style="flex: 1 1 48%; display: flex; align-items: center; height: 100%;">
-              <div class="instruction-note" style="margin: 0; transform: translateY(9px);">
-                Note: The assignment title must match the course title exactly.
-              </div>
+
+            <div class="form-group half">
+              <label for="slug">Assignment Slug (stable ID)</label>
+              <input id="slug" name="slug" type="text" placeholder="e.g., narrative-show-tell" />
+              <div class="instruction-note">Leave blank to auto-generate from the Display Title.</div>
             </div>
           </div>
+
+          <div class="row" style="align-items: flex-start; gap: 1rem;">
+            <div class="form-group half">
+              <label for="lms_link_title">LMS Link Title (Canvas/Moodle)</label>
+              <input id="lms_link_title" name="lms_link_title" type="text" placeholder="e.g., Narrative: Show vs. Tell (Rubiqs)" />
+              <div class="instruction-note">Optional. If blank, we’ll use the Display Title.</div>
+            </div>
+
+            <div class="form-group half">
+              <label for="assignment_title">Assignment Title (legacy/internal)</label>
+              <input id="assignment_title" name="assignment_title" type="text" placeholder="(Optional) legacy name" />
+              <div class="instruction-note">Legacy compatibility only — not required to match the course page.</div>
+            </div>
+          </div>
+
 
           <!-- Chat-Only Fields -->
           <div id="chat-fields" style="margin-top: 2rem; display: none; border-top: 1px solid #ddd; padding-top: 1.5rem;">
@@ -569,7 +586,31 @@
     async function init() {
       wireTabs();
       initTinyMCE();
-      await loadTables();
+      await loadTables();   // fetch + render
+      wireAutoSlug();       // call AFTER DOM is ready
+    }
+
+    // --- Utils ---
+    function toSlug(s) {
+      return (s || '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    function wireAutoSlug() {
+      const titleEl = document.getElementById('display_title');
+      const slugEl  = document.getElementById('slug');
+      if (!titleEl || !slugEl) return;
+
+      let userTouchedSlug = false;
+      slugEl.addEventListener('input', () => { userTouchedSlug = true; });
+
+      titleEl.addEventListener('input', () => {
+        if (userTouchedSlug) return;
+        slugEl.value = toSlug(titleEl.value);
+      });
     }
 
     // --- Tabs ---
@@ -616,7 +657,7 @@
       });
     }
 
-    // --- Review toggle (kept global for inline onclick= handlers) ---
+    // --- Review toggle (global for inline onclick=) ---
     window.toggleReview = function(button) {
       const buttons = document.querySelectorAll('.require-toggle .toggle-option');
       buttons.forEach(b => b.classList.remove('active'));
@@ -624,6 +665,33 @@
       const hidden = document.getElementById('requiresReviewValue');
       if (hidden) hidden.value = button.getAttribute('data-value');
     };
+
+    // --- Robust fetch helpers ---
+    async function getJson(url) {
+      const res = await fetch(url, { credentials: "same-origin" });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`GET ${url} → ${res.status} ${res.statusText}\n${text}`);
+      }
+      return res.json();
+    }
+
+    function normalizeAssignments(payload) {
+      // Accept: array | {assignments:[]} | {data:[]} | {items:[]}
+      if (Array.isArray(payload)) return payload;
+      if (payload && Array.isArray(payload.assignments)) return payload.assignments;
+      if (payload && Array.isArray(payload.data))        return payload.data;
+      if (payload && Array.isArray(payload.items))       return payload.items;
+      return [];
+    }
+
+    function normalizeSubmissions(payload) {
+      if (Array.isArray(payload)) return payload;
+      if (payload && Array.isArray(payload.submissions)) return payload.submissions;
+      if (payload && Array.isArray(payload.data))        return payload.data;
+      if (payload && Array.isArray(payload.items))       return payload.items;
+      return [];
+    }
 
     // --- Load & render tables ---
     async function loadTables() {
@@ -635,17 +703,24 @@
       let assignments = [];
 
       try {
-        const [subRes, assignRes] = await Promise.all([
-          fetch("/grader-submissions"),
-          fetch("/grader-assignments")
+        const [subJson, assignJson] = await Promise.all([
+          getJson("/grader-submissions").catch(e => {
+            console.error("❌ /grader-submissions failed:", e);
+            return [];
+          }),
+          getJson("/grader-assignments").catch(e => {
+            console.error("❌ /grader-assignments failed:", e);
+            return [];
+          })
         ]);
-        const subJson = await subRes.json();
-        const assignJson = await assignRes.json();
 
-        submissions = Array.isArray(subJson) ? subJson : (subJson.submissions || subJson.data || []);
-        assignments = Array.isArray(assignJson) ? assignJson : (assignJson.assignments || assignJson.data || []);
+        submissions = normalizeSubmissions(subJson);
+        assignments = normalizeAssignments(assignJson);
+
+        console.debug("📦 Submissions:", submissions);
+        console.debug("📦 Assignments:", assignments);
       } catch (err) {
-        console.error("Fetch error:", err);
+        console.error("❌ loadTables unexpected error:", err);
       }
 
       // — Submissions —
@@ -679,7 +754,7 @@
             ${submissions.map(row => {
               const submittedRaw = row.created_at || row.submitted_at || row.submission_time || "";
               const submitted = String(submittedRaw).slice(0,19).replace("T"," ");
-              const title = row.assignment_title || row.assignment_id || "";
+              const title = row.display_title || row.assignment_title || row.assignment_id || "";
               const score = (row.score ?? row.instructor_score ?? "—");
               const reviewed = row.reviewed ? "✅ Reviewed" : "Pending";
               const sid = row.submission_id || row.id || "";
@@ -703,7 +778,6 @@
         submissionsContainer.innerHTML = "";
         submissionsContainer.appendChild(table);
 
-        // actions
         submissionsContainer.querySelectorAll(".accept-submission-btn, .accept").forEach(btn => {
           btn.addEventListener("click", () => handleAccept(btn.getAttribute("data-submission-id")));
         });
@@ -716,8 +790,11 @@
       if (!assignments || assignments.length === 0) {
         assignmentsContainer.innerHTML = '<p style="text-align:center; color:#888;">No assignments found.</p>';
       } else {
-        const getId = a => a.assignment_id ?? a.id ?? a._id ?? null;
-        const getTitle = a => (a.assignment_title || a.title || "").trim();
+        const getId            = a => a.assignment_id ?? a.id ?? a._id ?? null;
+        const getTitle         = a => (a.assignment_title || a.title || "").trim();
+        const getDisplayTitle  = a => (a.display_title || a.assignment_title || a.title || "").trim();
+        const getSlug          = a => (a.slug || "").trim();
+        const getLmsLinkTitle  = a => (a.lms_link_title || getDisplayTitle(a)).trim();
         const editHref = a => {
           const id = getId(a);
           if (id) return `/grader-edit?assignment_id=${encodeURIComponent(id)}`;
@@ -726,13 +803,15 @@
           return null;
         };
 
+        const escapeAttr = (s) => String(s || "").replace(/"/g, "&quot;");
+
         const table = document.createElement("table");
         table.style.width = "100%";
         table.style.borderCollapse = "collapse";
         table.innerHTML = `
           <thead>
             <tr>
-              <th style="text-align:left; padding: 0.5rem;">Assignment Title</th>
+              <th style="text-align:left; padding: 0.5rem;">Title (Rubiqs) / Slug</th>
               <th>Model</th>
               <th>Points</th>
               <th>Requires Review</th>
@@ -741,18 +820,37 @@
           </thead>
           <tbody>
             ${assignments.map(a => {
-              const title = getTitle(a);
-              const safeTitle = (title || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+              const displayTitle = getDisplayTitle(a);
+              const slug = getSlug(a);
+              const lmsTitle = getLmsLinkTitle(a);
               const href = editHref(a);
 
-              const titleCell = title
-                ? `<a href="/student-demo?title=${encodeURIComponent(title)}"
-                      target="_blank"
-                      rel="noopener"
-                      style="text-decoration:none; color:#1f3a54; font-weight:500;">
-                    🔗 ${title}
-                   </a>`
-                : "—";
+              // Make the title a hyperlink:
+              // Prefer /embed/<slug> if slug exists; else fall back to /student-demo?title=...
+              const titleLink = slug
+                ? `<a href="/embed/${encodeURIComponent(slug)}" target="_blank" rel="noopener" style="color:#1f3a54; font-weight:600; text-decoration:none;">
+                    ${displayTitle || '(untitled)'}
+                  </a>`
+                : (displayTitle
+                    ? `<a href="/student-demo?title=${encodeURIComponent(displayTitle)}" target="_blank" rel="noopener" style="color:#1f3a54; font-weight:600; text-decoration:none;">
+                        ${displayTitle}
+                      </a>`
+                    : '(untitled)');
+
+              const titleCell = `
+                <div style="text-align:left;">
+                  <div>${titleLink}</div>
+                  <div style="font-size:.85rem;color:#6b7280;">${slug ? 'slug: ' + slug : 'no slug'}</div>
+                </div>`;
+
+              const copyParamsBtn = `<button class="action-button edit copy-params-btn"
+                                        data-slug="${escapeAttr(slug)}"
+                                        data-lms="${escapeAttr(lmsTitle)}"
+                                        type="button">Copy Params</button>`;
+
+              const copyEmbedBtn = `<button class="action-button edit copy-embed-btn"
+                                      data-slug="${escapeAttr(slug)}"
+                                      type="button">Copy Embed</button>`;
 
               return `
                 <tr>
@@ -760,16 +858,39 @@
                   <td>${a.gpt_model || "-"}</td>
                   <td>${a.total_points ?? "-"}</td>
                   <td>${a.instructor_approval ? "✅" : "❌"}</td>
-                  <td>
+                  <td style="display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap;">
                     ${href ? `<a href="${href}" class="action-button edit">Edit</a>` : `<span style="color:#888;">No ID/Title</span>`}
-                    <button class="action-button delete delete-assignment-btn" data-assignment-title="${safeTitle}">Delete</button>
+                    ${copyParamsBtn}
+                    ${copyEmbedBtn}
+                    <button class="action-button delete delete-assignment-btn" data-assignment-title="${escapeAttr(getTitle(a))}">Delete</button>
                   </td>
                 </tr>`;
             }).join("")}
           </tbody>`;
+
         assignmentsContainer.innerHTML = "";
         assignmentsContainer.appendChild(table);
 
+        // wire Copy Params
+        assignmentsContainer.querySelectorAll('.copy-params-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const slug = btn.getAttribute('data-slug') || '';
+            const lms  = btn.getAttribute('data-lms') || '';
+            copyLtiParams(slug, lms);
+          });
+        });
+
+        // wire Copy Embed
+        assignmentsContainer.querySelectorAll('.copy-embed-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const slug = btn.getAttribute('data-slug') || '';
+            copyEmbedCode(slug);
+          });
+        });
+
+
+
+        // wire Delete buttons
         assignmentsContainer.querySelectorAll(".delete-assignment-btn").forEach(btn => {
           btn.addEventListener("click", (e) => {
             e.preventDefault();
@@ -846,6 +967,17 @@
       });
     }
 
+    // --- LTI params helper (global) ---
+    window.copyLtiParams = function(slug, lmsTitle) {
+      const lines = [];
+      if (slug)     lines.push(`rubiqs_slug=${slug}`);
+      if (lmsTitle) lines.push(`rubiqs_link_title=${lmsTitle}`);
+      const text = lines.join('\n') || 'rubiqs_slug=\nrubiqs_link_title=';
+      navigator.clipboard.writeText(text)
+        .then(() => alert('✅ LTI params copied:\n\n' + text))
+        .catch(() => window.prompt('Copy these LTI params:', text));
+    };
+
     // --- Optional toast ---
     window.comingSoon = function() {
       const toast = document.createElement("div");
@@ -864,6 +996,32 @@
       setTimeout(() => toast.remove(), 3000);
     };
   })();
+
+  // Copies an <iframe> embed code pointing to /embed/<slug>
+  function copyEmbedCode(slug) {
+    if (!slug) {
+      alert("❌ No slug available for this assignment.");
+      return;
+    }
+    const origin = window.location.origin; // uses your current domain (Render in prod, localhost in dev)
+    const src = `${origin}/embed/${encodeURIComponent(slug)}`;
+    const iframe = `<iframe src="${src}" width="100%" height="640" frameborder="0" allow="clipboard-write; microphone; camera; display-capture; fullscreen" allowfullscreen title="Rubiqs Grader: ${slug}"></iframe>`;
+    navigator.clipboard.writeText(iframe)
+      .then(() => alert('✅ Embed code copied to clipboard!'))
+      .catch(() => window.prompt('Copy this embed code:', iframe));
+  }
+
   </script>
+
+  <script>
+    window.copyEmbedCode = function(slug, displayTitle){
+      const src = `https://rubiqs-grader.onrender.com/launch?rubiqs_slug=${encodeURIComponent(slug)}`;
+      const code = `<iframe src="${src}" width="900" height="650" frameborder="0" allow="clipboard-write; fullscreen" title="${(displayTitle||'Rubiqs Assignment').replace(/"/g,'&quot;')}"></iframe>`;
+      navigator.clipboard.writeText(code)
+        .then(() => alert('✅ Embed code copied to clipboard.\n\nPaste this into Canvas ➜ Edit ➜ HTML Editor.'))
+        .catch(() => window.prompt('Copy this embed code:', code));
+    };
+  </script>
+  
 </body>
 </html>

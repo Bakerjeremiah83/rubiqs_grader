@@ -24,8 +24,10 @@ from flask import (
 )
 from requests_oauthlib import OAuth1Session
 from werkzeug.utils import secure_filename
-
+from app.utils.slug import slugify
 from app.supabase_client import supabase, upload_to_supabase
+from app.utils.assignment_resolver import resolve_assignment_from_launch
+
 
 from ..launch_utils import load_assignment_config
 from ..utils.ai_usage_logger import log_ai_usage  # if you log usage
@@ -308,23 +310,17 @@ def grade_docx():
     import openai
     from werkzeug.utils import secure_filename
 
-    # --- Resolve assignment title from LTI claim ---
-    resource_link = session.get("launch_data", {}).get(
-        "https://purl.imsglobal.org/spec/lti/claim/resource_link", {}
-    )
-    title_from_claim = resource_link.get("title")
-    id_from_claim = resource_link.get("id")
-    assignment_title = str(
-        title_from_claim or f"Assignment-{id_from_claim}" or "Untitled Assignment"
-    ).strip()
-    assignment_title = normalize_title(assignment_title)
+    # -# --- RESOLVE: slug > custom > title ---
+    launch_data = session.get("launch_data", {}) or {}
+    assignment_row, resolved_title, resolved_slug = resolve_assignment_from_launch(launch_data, request)
 
-    # Load config (legacy file-based or wherever you store it)
-    assignment_config = load_assignment_config(assignment_title) or {}
-    print("🎯 Resolved assignment title:", assignment_title)
-
-    if not assignment_config:
+    if not assignment_row:
         return "❌ Assignment not found. Please contact your instructor.", 400
+
+    assignment_title = resolved_title or (assignment_row.get("assignment_title") or "")
+    assignment_config = assignment_row  # use DB row as the single source of truth
+    print("🎯 Resolved assignment — title:", assignment_title, "| slug:", resolved_slug)
+
 
     # 🔎 Resolve assignment_id (some schemas require NOT NULL / FK)
     assignment_id_db = None
@@ -1946,6 +1942,15 @@ def save_assignment():
     assignment_title = (request.form.get("assignment_title") or "").strip()
     if not assignment_title:
         return "❌ Assignment title is required", 400
+    
+    # --- NEW: independent display title + stable slug (H5P-style) ---
+    # display_title is what authors see in Rubiqs; slug is the stable ID used from LMS
+    display_title = (request.form.get("display_title") or assignment_title).strip()
+    user_slug = (request.form.get("slug") or "").strip()
+    slug = slugify(user_slug or display_title)
+
+    lms_link_title = (request.form.get("lms_link_title") or display_title).strip()
+
 
     grading_difficulty = request.form.get("grading_difficulty")
     grade_level = request.form.get("grade_level")
@@ -2049,6 +2054,9 @@ def save_assignment():
     payload = {
         "assignment_id": assignment_id,
         "assignment_title": assignment_title,
+        "display_title": display_title,
+        "slug": slug,
+        "lms_link_title": lms_link_title,
         # required for Grader dashboards
         "tool": "grader",
         "course_id": course_id,

@@ -97,6 +97,7 @@ def _safe_import_routes():
         "app.routes.auth",
         # Grader (grader_base page, assignments, submissions, review, grade-docx, grade-uscis-form, etc.)
         "app.routes.grader",
+        "app.routes.lti_deep_link",
     ]
     loaded = []
     for m in modules:
