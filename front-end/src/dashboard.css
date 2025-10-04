@@ -1,0 +1,318 @@
+/* =============================
+   Rubiqs Dashboard Unified CSS
+   ============================= */
+
+/* --- Global / Reset --- */
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --rubiqs-navy: #1f3a54;
+  --rubiqs-blue: #1f3a54;
+  --tile-size: 180px;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "tachyon", -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background: var(--rubiqs-navy);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* --- Header --- */
+.logo-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.25rem 2rem 0.5rem 4.25rem;
+}
+
+.logo-header img {
+  height: 84px;
+  width: auto;
+  box-shadow:
+    0 12px 24px rgba(16, 24, 40, 0.16),
+    0  4px 10px rgba(16, 24, 40, 0.10);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.logo-header img:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 0 0 2px #f2f4f7,
+    0 16px 28px rgba(16, 24, 40, 0.22),
+    0  6px 12px rgba(16, 24, 40, 0.14);
+}
+
+.logo-header .subtitle {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.25rem;
+  color: #d0d6db;
+}
+
+/* --- Dashboard Card --- */
+.dashboard-card {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  margin: 1rem 2rem 3rem;
+  padding: 3rem 3rem 3.5rem;
+  border-radius: 30px;
+  overflow: hidden;
+  border: 1px solid rgba(100,110,130,0.25);
+  background: linear-gradient(145deg, #fefefe 0%, #f3f5f8 38%, #e6e9ef 62%, #fcfcfd 100%);
+  box-shadow:
+    0 34px 80px rgba(16, 24, 40, 0.32),
+    0 14px 30px rgba(16, 24, 40, 0.18),
+    0 2px  6px rgba(16, 24, 40, 0.08),
+    inset 0  4px  6px rgba(255,255,255,0.95),
+    inset 0 18px 28px rgba(255,255,255,0.60),
+    inset 0 -8px 12px rgba(0,0,0,0.14);
+  transition: box-shadow 0.35s ease, filter 0.35s ease, background 0.35s ease;
+}
+
+.dashboard-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 12px rgba(0,0,0,0.045),
+    inset 0 0 18px rgba(0,0,0,0.06),
+    inset 0 0 14px rgba(255,255,255,0.25);
+}
+
+.dashboard-card::before {
+  content: "";
+  position: absolute;
+  top: -25%;
+  left: -40%;
+  width: 60%;
+  height: 200%;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.55) 35%, rgba(255,255,255,0) 70%);
+  transform: translateX(-120%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.dashboard-card:hover {
+  box-shadow:
+    0 40px 90px rgba(16, 24, 40, 0.36),
+    0 18px 36px rgba(16, 24, 40, 0.22),
+    0  4px 10px rgba(16, 24, 40, 0.10),
+    inset 0  5px  7px rgba(255,255,255,0.95),
+    inset 0 22px 32px rgba(255,255,255,0.62),
+    inset 0 -10px 14px rgba(0,0,0,0.16);
+  filter: saturate(1.05);
+}
+
+.dashboard-card:hover::before {
+  opacity: 1;
+  animation: sheen-sweep 1.2s ease forwards;
+}
+
+@keyframes sheen-sweep {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+
+/* --- Dashboard Title --- */
+.dashboard-title {
+  text-align: center;
+  margin: 0 0 1.75rem;
+  line-height: 1.1;
+}
+
+.dashboard-title .title-main {
+  position: relative;
+  display: inline-block;
+  font-family: "tachyon", sans-serif;
+  font-weight: 700;
+  font-size: clamp(2.8rem, 6vw, 5.25rem);
+  color: var(--rubiqs-blue);
+  text-shadow:
+    0 -2px 2px rgba(255,255,255,0.95),
+    0  1px 0 rgba(0,0,0,0.08),
+    0  6px 12px rgba(0,0,0,0.25),
+    0 12px 22px rgba(0,0,0,0.18);
+  filter: drop-shadow(0 4px 8px rgba(16,24,40,0.18));
+}
+
+.dashboard-title .title-main::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: -30%;
+  width: 60%;
+  height: 140%;
+  pointer-events: none;
+  background: linear-gradient(110deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 40%, rgba(255,255,255,0) 70%);
+  transform: translateX(-120%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.dashboard-title .title-main:hover::after {
+  opacity: 1;
+  animation: title-sheen 1s ease forwards;
+}
+
+@keyframes title-sheen {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+
+.dashboard-title .title-sub {
+  display: block;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 500;
+  font-size: clamp(1.1rem, 2.2vw, 1.75rem);
+  color: var(--rubiqs-blue);
+  opacity: 0.9;
+  margin-top: 0.45rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* --- Tiles --- */
+.tile-container, .tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--tile-size), 1fr));
+  gap: 1.5rem;
+  justify-content: center;
+  align-content: start;
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.tile, .tile.only-image {
+  display: block;
+  text-decoration: none;
+  width: var(--tile-size);
+  height: var(--tile-size);
+  background: #fff;
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid #f2f4f7;
+  box-shadow:
+    0 12px 24px rgba(16, 24, 40, 0.16),
+    0  4px 10px rgba(16, 24, 40, 0.10),
+    inset 0 2px 2px rgba(255,255,255,0.9);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  padding: 0.65rem;
+  color: inherit;
+}
+
+.tile.only-image img {
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+}
+
+.tile:hover, .tile:focus, .tile.only-image:hover, .tile.only-image:focus {
+  transform: translateY(-4px);
+  box-shadow:
+    0 16px 28px rgba(16, 24, 40, 0.22),
+    0  6px 12px rgba(16, 24, 40, 0.14),
+    inset 0 2px 2px rgba(255,255,255,0.9);
+  outline: none;
+}
+
+/* --- Panels & Buttons from original dashboard.css --- */
+.panel-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.btn {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #0b4;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+/* --- Modal --- */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: #ffffff;
+  color: var(--rubiqs-blue);
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+.modal-content h2 {
+  margin: 0 0 1rem;
+}
+
+.modal-content button {
+  margin-top: 1.25rem;
+  padding: 0.55rem 1.25rem;
+  background: var(--rubiqs-navy);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.modal-content button:hover {
+  background: #2a5278;
+}
+
+/* --- Responsive --- */
+@media (max-width: 992px) {
+  .tile-container { grid-template-columns: repeat(2, auto); }
+  .dashboard-card { margin: 1rem 1.25rem 2.25rem; padding: 2.25rem; }
+  .logo-header { padding-left: 1rem; }
+}
+
+@media (max-width: 540px) {
+  .tile-container { grid-template-columns: repeat(1, auto); }
+  .logo-header { padding: 1rem 0.75rem 0 0.75rem; }
+  .logo-header img { height: 64px; }
+  .dashboard-card { border-radius: 24px; }
+  .dashboard-card::after {
+    box-shadow:
+      inset 0 0 0 8px rgba(0,0,0,0.05),
+      inset 0 0 14px rgba(255,255,255,0.22);
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "rubiqs_grader",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"  
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bakerjeremiah83/rubiqs_grader.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Bakerjeremiah83/rubiqs_grader/issues"
+  },
+  "homepage": "https://github.com/Bakerjeremiah83/rubiqs_grader#readme",
+  "description": ""
+}
